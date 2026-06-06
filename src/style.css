@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #c41d1d;
+  --color-primary-light: #e84343;
+  --color-primary-dark: #9a1616;
+  --color-gold: #d4a017;
+  --color-gold-light: #f0c94b;
+  --color-gold-dark: #a67f12;
+  font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+}
+
+.btn-primary {
+  @apply bg-[var(--color-primary)] text-white px-6 py-2.5 rounded-lg hover:bg-[var(--color-primary-dark)] transition font-medium;
+}
+
+.btn-outline {
+  @apply border border-[var(--color-primary)] text-[var(--color-primary)] px-6 py-2.5 rounded-lg hover:bg-red-50 transition font-medium;
+}
+
+.badge {
+  @apply px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
