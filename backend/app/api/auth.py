@@ -46,11 +46,6 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     return Token(access_token=token)
 
 
-@router.get("/me", response_model=UserOut)
-async def get_me(current_user: User = Depends(get_current_user)):
-    return current_user
-
-
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Security(security),
     db: AsyncSession = Depends(get_db),
@@ -64,6 +59,11 @@ async def get_current_user(
     if not user:
         raise HTTPException(status_code=401, detail="用户不存在")
     return user
+
+
+@router.get("/me", response_model=UserOut)
+async def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
 
 
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
