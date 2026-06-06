@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models.product import Product, ProductCategory
@@ -29,7 +30,9 @@ async def list_products(
 
 @router.get("/{product_id}", response_model=ProductOut)
 async def get_product(product_id: int, db: AsyncSession = Depends(get_db)):
-    product = await db.get(Product, product_id)
+    stmt = select(Product).options(selectinload(Product.images)).where(Product.id == product_id)
+    result = await db.execute(stmt)
+    product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="产品不存在")
     return product
@@ -53,7 +56,9 @@ async def create_product(
     db.add(product)
     await db.commit()
     await db.refresh(product)
-    return product
+    stmt = select(Product).options(selectinload(Product.images)).where(Product.id == product.id)
+    result = await db.execute(stmt)
+    return result.scalar_one()
 
 
 @router.put("/{product_id}", response_model=ProductOut)
@@ -75,5 +80,6 @@ async def update_product(
     product.is_template = product_data.is_template
     product.stock = product_data.stock
     await db.commit()
-    await db.refresh(product)
-    return product
+    stmt = select(Product).options(selectinload(Product.images)).where(Product.id == product_id)
+    result = await db.execute(stmt)
+    return result.scalar_one()

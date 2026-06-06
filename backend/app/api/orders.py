@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models.order import Order, OrderStatus, OrderAssignment, OrderProgressPhoto
@@ -13,6 +14,15 @@ from app.services.order import create_order, update_order_status, assign_artisan
 router = APIRouter(prefix="/api/orders", tags=["订单"])
 
 
+async def _get_order_with_relations(db: AsyncSession, order_id: int) -> Order | None:
+    stmt = select(Order).options(
+        selectinload(Order.assignments),
+        selectinload(Order.progress_photos)
+    ).where(Order.id == order_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 @router.post("", response_model=OrderOut, status_code=201)
 async def place_order(
     order_data: OrderCreate,
@@ -21,7 +31,7 @@ async def place_order(
 ):
     try:
         order = await create_order(db, current_user.id, order_data.model_dump())
-        return order
+        return await _get_order_with_relations(db, order.id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -31,7 +41,10 @@ async def list_my_orders(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(Order).where(Order.customer_id == current_user.id).order_by(Order.created_at.desc())
+    stmt = select(Order).options(
+        selectinload(Order.assignments),
+        selectinload(Order.progress_photos)
+    ).where(Order.customer_id == current_user.id).order_by(Order.created_at.desc())
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -42,7 +55,7 @@ async def get_order(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    order = await db.get(Order, order_id)
+    order = await _get_order_with_relations(db, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
     if order.customer_id != current_user.id and current_user.role.value not in ("admin", "artisan"):
@@ -60,8 +73,8 @@ async def change_order_status(
     if current_user.role.value not in ("admin", "artisan"):
         raise HTTPException(status_code=403, detail="无权修改订单状态")
     try:
-        order = await update_order_status(db, order_id, status_data.status)
-        return order
+        await update_order_status(db, order_id, status_data.status)
+        return await _get_order_with_relations(db, order_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -77,8 +90,7 @@ async def assign_order_artisan(
         raise HTTPException(status_code=403, detail="需要管理员权限")
     try:
         await assign_artisan(db, order_id, assign_data.artisan_id, assign_data.deadline)
-        order = await db.get(Order, order_id)
-        return order
+        return await _get_order_with_relations(db, order_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
