@@ -9,6 +9,7 @@ STATUS_MESSAGES = {
     "in_progress": "您的订单正在制作中",
     "qc": "您的订单正在进行质量检验",
     "shipped": "您的订单已发货",
+    "awaiting_review": "您的订单已确认收货，快去评价吧",
     "completed": "您的订单已完成",
     "cancelled": "您的订单已取消",
 }

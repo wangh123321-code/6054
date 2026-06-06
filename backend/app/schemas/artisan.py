@@ -13,6 +13,8 @@ class ArtisanOut(BaseModel):
     monthly_capacity: int
     bio: str | None = None
     avatar_url: str | None = None
+    average_rating: float
+    review_count: int
 
     class Config:
         from_attributes = True

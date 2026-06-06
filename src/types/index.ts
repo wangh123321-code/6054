@@ -44,7 +44,7 @@ export interface Order {
   order_no: string
   customer_id: number
   product_id: number
-  status: 'pending' | 'assigned' | 'in_progress' | 'qc' | 'shipped' | 'completed' | 'cancelled'
+  status: 'pending' | 'assigned' | 'in_progress' | 'qc' | 'shipped' | 'awaiting_review' | 'completed' | 'cancelled'
   total_price: number
   custom_size?: string
   custom_color?: string
@@ -83,6 +83,25 @@ export interface Artisan {
   monthly_capacity: number
   bio?: string
   avatar_url?: string
+  average_rating: number
+  review_count: number
+}
+
+export interface Review {
+  id: number
+  order_id: number
+  product_id: number
+  artisan_id: number
+  customer_id: number
+  rating: number
+  comment?: string
+  created_at: string
+  customer_name?: string
+}
+
+export interface ReviewCreate {
+  rating: number
+  comment?: string
 }
 
 export interface ArtisanSchedule {

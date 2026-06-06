@@ -1,4 +1,4 @@
-from sqlalchemy import String, Text, Integer, ForeignKey
+from sqlalchemy import String, Text, Integer, Float, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -14,6 +14,8 @@ class Artisan(Base):
     monthly_capacity: Mapped[int] = mapped_column(Integer, default=20, nullable=False)
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    average_rating: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    review_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     schedules: Mapped[list["ArtisanSchedule"]] = relationship(back_populates="artisan", cascade="all, delete-orphan")
 

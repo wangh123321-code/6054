@@ -13,6 +13,7 @@ class OrderStatus(str, enum.Enum):
     in_progress = "in_progress"
     qc = "qc"
     shipped = "shipped"
+    awaiting_review = "awaiting_review"
     completed = "completed"
     cancelled = "cancelled"
 
@@ -62,3 +63,21 @@ class OrderProgressPhoto(Base):
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     order: Mapped["Order"] = relationship(back_populates="progress_photos")
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    order_id: Mapped[int] = mapped_column(Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, unique=True)
+    product_id: Mapped[int] = mapped_column(Integer, ForeignKey("products.id"), nullable=False)
+    artisan_id: Mapped[int] = mapped_column(Integer, ForeignKey("artisans.id"), nullable=False)
+    customer_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    order: Mapped["Order"] = relationship()
+    product: Mapped["Product"] = relationship()
+    artisan: Mapped["Artisan"] = relationship()
+    customer: Mapped["User"] = relationship()

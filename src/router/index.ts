@@ -31,6 +31,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/orders/:id/review',
+    name: 'order-review',
+    component: () => import('@/pages/OrderReview.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/artisan/workspace',
     name: 'artisan-workspace',
     component: () => import('@/pages/ArtisanWorkspace.vue'),

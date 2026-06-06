@@ -56,3 +56,23 @@ class OrderOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ReviewCreate(BaseModel):
+    rating: int
+    comment: str | None = None
+
+
+class ReviewOut(BaseModel):
+    id: int
+    order_id: int
+    product_id: int
+    artisan_id: int
+    customer_id: int
+    rating: int
+    comment: str | None = None
+    created_at: datetime
+    customer_name: str | None = None
+
+    class Config:
+        from_attributes = True

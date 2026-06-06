@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import api from '@/api'
-import type { Product, ProductListItem } from '@/types'
+import api, { productApi } from '@/api'
+import type { Product, ProductListItem, Review } from '@/types'
 
 export const useProductStore = defineStore('product', () => {
   const products = ref<ProductListItem[]>([])
   const currentProduct = ref<Product | null>(null)
+  const currentProductReviews = ref<Review[]>([])
   const loading = ref(false)
+  const reviewsLoading = ref(false)
 
   async function fetchProducts(category?: string) {
     loading.value = true
@@ -30,5 +32,24 @@ export const useProductStore = defineStore('product', () => {
     }
   }
 
-  return { products, currentProduct, loading, fetchProducts, fetchProduct }
+  async function fetchProductReviews(productId: number, limit: number = 10) {
+    reviewsLoading.value = true
+    try {
+      const { data } = await productApi.getReviews(productId, limit)
+      currentProductReviews.value = data
+    } finally {
+      reviewsLoading.value = false
+    }
+  }
+
+  return {
+    products,
+    currentProduct,
+    currentProductReviews,
+    loading,
+    reviewsLoading,
+    fetchProducts,
+    fetchProduct,
+    fetchProductReviews,
+  }
 })

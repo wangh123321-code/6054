@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import api from '@/api'
-import type { Order, ProgressPhoto } from '@/types'
+import api, { orderApi } from '@/api'
+import type { Order, ProgressPhoto, Review, ReviewCreate } from '@/types'
 
 export const useOrderStore = defineStore('order', () => {
   const orders = ref<Order[]>([])
   const currentOrder = ref<Order | null>(null)
+  const currentReview = ref<Review | null>(null)
   const loading = ref(false)
 
   async function placeOrder(data: {
@@ -62,5 +63,41 @@ export const useOrderStore = defineStore('order', () => {
     return data as ProgressPhoto[]
   }
 
-  return { orders, currentOrder, loading, placeOrder, fetchOrders, fetchOrder, updateStatus, assignArtisan, uploadProgressPhoto, fetchProgressPhotos }
+  async function confirmReceipt(orderId: number) {
+    const { data } = await orderApi.confirmReceipt(orderId)
+    if (currentOrder.value?.id === orderId) currentOrder.value = data
+    const idx = orders.value.findIndex((o) => o.id === orderId)
+    if (idx !== -1) orders.value[idx] = data
+    return data
+  }
+
+  async function submitReview(orderId: number, reviewData: ReviewCreate) {
+    const { data } = await orderApi.submitReview(orderId, reviewData)
+    currentReview.value = data
+    await fetchOrder(orderId)
+    return data
+  }
+
+  async function fetchOrderReview(orderId: number) {
+    const { data } = await orderApi.getOrderReview(orderId)
+    currentReview.value = data
+    return data
+  }
+
+  return {
+    orders,
+    currentOrder,
+    currentReview,
+    loading,
+    placeOrder,
+    fetchOrders,
+    fetchOrder,
+    updateStatus,
+    assignArtisan,
+    uploadProgressPhoto,
+    fetchProgressPhotos,
+    confirmReceipt,
+    submitReview,
+    fetchOrderReview,
+  }
 })

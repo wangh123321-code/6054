@@ -44,6 +44,50 @@
 
     <div v-else class="text-center py-20 text-gray-400">作品不存在</div>
 
+    <section v-if="product" class="mt-16">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-gray-900">用户评价</h2>
+        <span class="text-sm text-gray-500">共 {{ productStore.currentProductReviews.length }} 条</span>
+      </div>
+
+      <div v-if="productStore.reviewsLoading" class="text-center py-10 text-gray-400">加载评价中...</div>
+
+      <div v-else-if="productStore.currentProductReviews.length === 0" class="bg-white rounded-xl p-10 text-center shadow-sm">
+        <MessageSquare class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <p class="text-gray-500">暂无评价</p>
+        <p class="text-sm text-gray-400 mt-1">成为第一个评价的用户吧</p>
+      </div>
+
+      <div v-else class="space-y-4">
+        <div
+          v-for="review in productStore.currentProductReviews"
+          :key="review.id"
+          class="bg-white rounded-xl p-5 shadow-sm"
+        >
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold">
+                {{ (review.customer_name || '用').charAt(0) }}
+              </div>
+              <div>
+                <p class="font-medium text-gray-900">{{ review.customer_name || '匿名用户' }}</p>
+                <div class="flex items-center gap-1 mt-1">
+                  <Star
+                    v-for="star in 5"
+                    :key="star"
+                    :class="['w-4 h-4', review.rating >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300']"
+                  />
+                </div>
+              </div>
+            </div>
+            <span class="text-xs text-gray-400">{{ formatDate(review.created_at) }}</span>
+          </div>
+          <p v-if="review.comment" class="text-gray-700 text-sm leading-relaxed">{{ review.comment }}</p>
+          <p v-else class="text-gray-400 text-sm italic">该用户未填写评价内容</p>
+        </div>
+      </div>
+    </section>
+
     <section class="mt-16">
       <h2 class="text-xl font-bold text-gray-900 mb-6">更多作品推荐</h2>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -69,6 +113,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Star, MessageSquare } from 'lucide-vue-next'
 import { useProductStore } from '@/stores/product'
 
 const route = useRoute()
@@ -99,11 +144,16 @@ function navigateToProduct(id: number) {
   router.push(`/products/${id}`)
 }
 
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('zh-CN')
+}
+
 async function loadProduct() {
   const id = Number(route.params.id)
   if (id) {
     selectedImage.value = null
     await productStore.fetchProduct(id)
+    await productStore.fetchProductReviews(id, 10)
   }
 }
 

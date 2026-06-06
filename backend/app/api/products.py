@@ -5,8 +5,11 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models.product import Product, ProductCategory
+from app.models.order import Review
 from app.schemas.product import ProductCreate, ProductOut, ProductListOut
+from app.schemas.order import ReviewOut
 from app.api.auth import require_admin
+from app.services.order import get_reviews_by_product
 
 router = APIRouter(prefix="/api/products", tags=["产品"])
 
@@ -83,3 +86,16 @@ async def update_product(
     stmt = select(Product).options(selectinload(Product.images)).where(Product.id == product_id)
     result = await db.execute(stmt)
     return result.scalar_one()
+
+
+@router.get("/{product_id}/reviews", response_model=list[ReviewOut])
+async def get_product_reviews(
+    product_id: int,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+):
+    product = await db.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="产品不存在")
+    reviews = await get_reviews_by_product(db, product_id, limit)
+    return reviews

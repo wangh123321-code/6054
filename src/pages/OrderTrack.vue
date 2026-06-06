@@ -8,18 +8,42 @@
         <div
           v-for="order in orderStore.orders"
           :key="order.id"
-          @click="router.push(`/orders/${order.id}`)"
-          class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition cursor-pointer"
+          class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition"
         >
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="font-semibold text-gray-900">{{ order.order_no }}</p>
-              <p class="text-sm text-gray-500 mt-1">{{ formatDate(order.created_at) }}</p>
+          <div @click="router.push(`/orders/${order.id}`)" class="cursor-pointer">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-semibold text-gray-900">{{ order.order_no }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ formatDate(order.created_at) }}</p>
+              </div>
+              <div class="text-right">
+                <span :class="['badge', statusBadgeClass(order.status)]">{{ statusLabel(order.status) }}</span>
+                <p class="text-[var(--color-primary)] font-bold mt-1">¥{{ order.total_price }}</p>
+              </div>
             </div>
-            <div class="text-right">
-              <span :class="['badge', statusBadgeClass(order.status)]">{{ statusLabel(order.status) }}</span>
-              <p class="text-[var(--color-primary)] font-bold mt-1">¥{{ order.total_price }}</p>
-            </div>
+          </div>
+          <div class="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button
+              v-if="order.status === 'shipped'"
+              @click.stop="handleConfirmReceipt(order.id)"
+              class="btn-primary text-sm flex-1"
+            >
+              确认收货
+            </button>
+            <button
+              v-if="order.status === 'awaiting_review'"
+              @click.stop="router.push(`/orders/${order.id}/review`)"
+              class="btn-primary text-sm flex-1"
+            >
+              去评价
+            </button>
+            <button
+              v-if="order.status === 'completed'"
+              @click.stop="router.push(`/orders/${order.id}/review`)"
+              class="btn-outline text-sm flex-1"
+            >
+              查看评价
+            </button>
           </div>
         </div>
       </div>
@@ -59,6 +83,33 @@
               </div>
               <span class="text-xs mt-2" :class="stepIndex >= idx ? 'text-[var(--color-primary)] font-medium' : 'text-gray-400'">{{ step.label }}</span>
             </div>
+          </div>
+        </div>
+
+        <div v-if="order.status === 'shipped' || order.status === 'awaiting_review' || order.status === 'completed'" class="bg-white rounded-xl p-6 shadow-sm">
+          <h2 class="font-semibold text-gray-900 mb-4">评价操作</h2>
+          <div class="flex gap-3">
+            <button
+              v-if="order.status === 'shipped'"
+              @click="handleConfirmReceipt(order.id)"
+              class="btn-primary flex-1"
+            >
+              确认收货
+            </button>
+            <button
+              v-if="order.status === 'awaiting_review'"
+              @click="router.push(`/orders/${order.id}/review`)"
+              class="btn-primary flex-1"
+            >
+              去评价
+            </button>
+            <button
+              v-if="order.status === 'completed'"
+              @click="router.push(`/orders/${order.id}/review`)"
+              class="btn-outline flex-1"
+            >
+              查看评价
+            </button>
           </div>
         </div>
 
@@ -141,6 +192,7 @@ const statusSteps = [
   { key: 'in_progress', label: '制作中' },
   { key: 'qc', label: '质检中' },
   { key: 'shipped', label: '已发货' },
+  { key: 'awaiting_review', label: '待评价' },
   { key: 'completed', label: '已完成' },
 ]
 
@@ -157,7 +209,8 @@ const progressPercent = computed(() => {
 function statusLabel(status: string) {
   const map: Record<string, string> = {
     pending: '待分配', assigned: '已分配', in_progress: '制作中',
-    qc: '质检中', shipped: '已发货', completed: '已完成', cancelled: '已取消',
+    qc: '质检中', shipped: '已发货', awaiting_review: '待评价',
+    completed: '已完成', cancelled: '已取消',
   }
   return map[status] ?? status
 }
@@ -169,6 +222,7 @@ function statusBadgeClass(status: string) {
     in_progress: 'bg-orange-100 text-orange-700',
     qc: 'bg-purple-100 text-purple-700',
     shipped: 'bg-green-100 text-green-700',
+    awaiting_review: 'bg-amber-100 text-amber-700',
     completed: 'bg-gray-100 text-gray-700',
     cancelled: 'bg-red-100 text-red-700',
   }
@@ -192,6 +246,21 @@ async function handleAssignArtisan() {
     deadline: assignForm.deadline || undefined,
   })
   await orderStore.fetchOrder(order.value.id)
+}
+
+async function handleConfirmReceipt(orderId: number) {
+  if (!confirm('确认已收到商品吗？')) return
+  try {
+    await orderStore.confirmReceipt(orderId)
+    if (isDetailMode.value) {
+      await orderStore.fetchOrder(orderId)
+    } else {
+      await orderStore.fetchOrders()
+    }
+    alert('确认收货成功，请对商品进行评价')
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '操作失败，请重试')
+  }
 }
 
 onMounted(() => {
